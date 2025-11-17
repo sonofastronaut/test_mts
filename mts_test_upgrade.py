@@ -30,8 +30,8 @@ st.write(df.head())
 # Пропуски в данных
 st.header("📊 Информация о данных")
 st.subheader("Пропуски")
-st.write(df.isna().sum())
-
+missing = df.isna().sum().to_frame(name="Количество пропусков")
+st.write(missing)
     
 # Распределение целевой переменной
 if "churn" in df.columns:
@@ -103,6 +103,7 @@ if st.button("Обучить модель"):
     fig, ax = plt.subplots(figsize=(8, 6))
     importances.sort_values().plot(kind="barh", ax=ax)
     st.pyplot(fig)
+
 
 
 
