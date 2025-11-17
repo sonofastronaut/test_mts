@@ -31,7 +31,9 @@ st.write(df.head())
 st.header("📊 Информация о данных")
 st.subheader("Пропуски")
 st.write(df.isna().sum())
-
+if st.write(df.isna().sum()) == 0:
+    print ('Пропусков в данных нет')
+    
 # --- Graph #1: Target distribution ---
 if "churn" in df.columns:
     st.subheader("📌 Распределение целевой переменной — churn")
@@ -102,3 +104,4 @@ if st.button("Обучить модель"):
     fig, ax = plt.subplots(figsize=(8, 6))
     importances.sort_values().plot(kind="barh", ax=ax)
     st.pyplot(fig)
+
