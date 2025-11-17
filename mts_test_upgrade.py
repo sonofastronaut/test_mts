@@ -14,7 +14,7 @@ st.set_page_config(page_title="Churn Prediction App", page_icon="📊")
 
 st.title("📉 Предсказание оттока клиентов (Churn)")
 
-# --- File upload ---
+#Загрузка датасета
 st.header("📁 Загрузите файл")
 uploaded = st.file_uploader("CSV-файл", type="csv")
 
@@ -22,18 +22,18 @@ if uploaded is None:
     st.info("Пожалуйста, загрузите CSV-файл")
     st.stop()
 
-# --- Load data ---
+#Показываем начало таблицы
 df = pd.read_csv(uploaded)
 st.header("🔎 Предпросмотр данных")
 st.write(df.head())
 
-# --- Basic info ---
+# Пропуски в данных
 st.header("📊 Информация о данных")
 st.subheader("Пропуски")
 st.write(df.isna().sum())
 
     
-# --- Graph #1: Target distribution ---
+# Распределение целевой переменной
 if "churn" in df.columns:
     st.subheader("📌 Распределение целевой переменной — churn")
 
@@ -50,14 +50,14 @@ for col in df.columns:
     if df[col].dtype == 'object':
         df[col] = LabelEncoder().fit_transform(df[col])
 
-# --- Graph #2: Correlation heatmap ---
-st.subheader("🧩 Корреляционная матрица")
+# Матрица корреляций
+st.subheader("🧩 Матрица корреляций")
 
 fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(df.corr(), annot=False, cmap="Blues")
+sns.heatmap(df.corr(), annot=False, cmap="Reds")
 st.pyplot(fig)
 
-# --- Train model button ---
+#Обучить модель
 st.header("🤖 Обучение модели")
 if st.button("Обучить модель"):
 
@@ -84,25 +84,26 @@ if st.button("Обучить модель"):
     st.write("Accuracy:", accuracy_score(y_test, preds))
     st.write("ROC-AUC:", roc_auc_score(y_test, probs))
 
-    st.text("Classification report:")
+    st.text("Отчет о работе модели")
     st.text(classification_report(y_test, preds))
 
-    # --- Graph #3: Confusion Matrix ---
-    st.subheader("🟥 Confusion Matrix")
+    #Матрица ошибок
+    st.subheader("🟥 Матрица ошибок")
 
     cm = confusion_matrix(y_test, preds)
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Reds")
     st.pyplot(fig)
 
-    # --- Graph #4: Feature importance ---
-    st.subheader("🌲 Важность признаков (Feature Importance)")
+    # Важность признаков
+    st.subheader("🌲 Важность признаков ")
 
     importances = pd.Series(model.feature_importances_, index=X.columns)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     importances.sort_values().plot(kind="barh", ax=ax)
     st.pyplot(fig)
+
 
 
 
