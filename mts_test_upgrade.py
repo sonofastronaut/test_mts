@@ -73,14 +73,14 @@ sns.heatmap(df.corr(), cmap="Reds")
 st.pyplot(fig)
 
 # ============================================================
-# 5. Обучение модели
+# 5. Обучение и сравнение моделей
 # ============================================================
-st.header("🤖 Обучение модели")
+st.header("🤖 Обучение и сравнение моделей")
 
-if st.button("Обучить модель"):
+if st.button("Обучить модели"):
     
     if "churn" not in df.columns:
-        st.error("❌ Ошибка: нет столбца 'churn'. Невозможно обучить модель.")
+        st.error("❌ Ошибка: нет столбца 'churn'. Невозможно обучить модели.")
         st.stop()
 
     X = df.drop("churn", axis=1)
@@ -90,17 +90,61 @@ if st.button("Обучить модель"):
         X, y, test_size=0.25, random_state=42
     )
 
-    # Модель
-    model = RandomForestClassifier(
-        n_estimators=300,
-        random_state=42
-    )
-    model.fit(X_train, y_train)
+    # Словарь моделей
+    import xgboost as xgb
+    models = {
+        "RandomForest": RandomForestClassifier(
+            n_estimators=300,
+            random_state=42,
+            class_weight="balanced"
+        ),
+        "XGBoost": xgb.XGBClassifier(
+            n_estimators=500,
+            max_depth=5,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            scale_pos_weight=(y_train == 0).sum() / (y_train == 1).sum(),
+            objective="binary:logistic",
+            eval_metric="logloss",
+            random_state=42
+        )
+    }
 
-    preds = model.predict(X_test)
-    probs = model.predict_proba(X_test)[:, 1]
+    results = []
 
-    st.success("🎉 Модель успешно обучена!")
+    # Обучение всех моделей
+    for name, model in models.items():
+        model.fit(X_train, y_train)
+
+        preds = model.predict(X_test)
+        probs = model.predict_proba(X_test)[:, 1]
+
+        # Подсчёт метрик
+        precision = precision_score(y_test, preds)
+        recall = recall_score(y_test, preds)
+        f1 = f1_score(y_test, preds)
+
+        roc_auc = roc_auc_score(y_test, probs)
+
+        precision_curve, recall_curve, thresholds = precision_recall_curve(y_test, probs)
+        pr_auc = auc(recall_curve, precision_curve)
+
+        results.append({
+            "Модель": name,
+            "Precision": round(precision, 4),
+            "Recall": round(recall, 4),
+            "F1-score": round(f1, 4),
+            "ROC-AUC": round(roc_auc, 4),
+            "PR-AUC": round(pr_auc, 4)
+        })
+
+    # Превращаем в таблицу
+    results_df = pd.DataFrame(results)
+
+    st.subheader("📊 Сравнение моделей")
+    st.dataframe(results_df.style.highlight_max(color="lightgreen", axis=0))
+
 
     # ============================================================
     # 6. Метрики (для несбалансированных данных)
@@ -162,4 +206,5 @@ if st.button("Обучить модель"):
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
     st.pyplot(fig)
+
 
