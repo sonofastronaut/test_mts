@@ -124,8 +124,8 @@ if st.button("Обучить модель"):
     st.write(f"**ROC-AUC:** {roc_auc:.4f}")
     st.write(f"**PR-AUC:** {pr_auc:.4f}")
 
-    st.text("Классификационный отчёт:")
-    st.text(classification_report(y_test, preds))
+    # st.text("Классификационный отчёт:")
+    # st.text(classification_report(y_test, preds))
 
     # ============================================================
     # 7. Precision–Recall Curve
@@ -162,3 +162,4 @@ if st.button("Обучить модель"):
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
     st.pyplot(fig)
+
