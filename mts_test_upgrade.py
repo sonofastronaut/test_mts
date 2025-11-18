@@ -30,10 +30,26 @@ df = pd.read_csv(uploaded)
 st.header("🔎 Предпросмотр данных")
 st.write(df.head())
 
-# Пропуски
-st.subheader("📊 Пропуски в данных")
-missing = df.isna().sum().to_frame(name="Количество пропусков")
-st.write(missing)
+# Обработка пропусков
+st.subheader("🧹 Обработка пропусков")
+
+missing_total = df.isna().sum().sum()
+
+if missing_total == 0:
+    st.success("✔️ В данных нет пропусков — обработка не требуется.")
+else:
+    st.warning(f"⚠️ Обнаружено пропусков: {missing_total}. Выполняем заполнение...")
+
+    # Числовые столбцы → медиана
+    num_cols = df.select_dtypes(include=['int64', 'float64']).columns
+    # Категориальные столбцы → мода
+    cat_cols = df.select_dtypes(include=['object']).columns
+
+    df[num_cols] = df[num_cols].fillna(df[num_cols].median())
+    df[cat_cols] = df[cat_cols].fillna(df[cat_cols].mode().iloc[0])
+
+    st.info("Пропуски были заполнены.")
+    st.write(df.isna().sum())
 
 # Определение целевой переменной
 st.subheader("🎯 Определение целевой переменной")
@@ -144,5 +160,6 @@ if st.button("Обучить модель"):
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
     st.pyplot(fig)
+
 
 
