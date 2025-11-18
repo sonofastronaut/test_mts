@@ -100,7 +100,9 @@ if st.button("Обучить модель"):
 
     model.fit(X_train, y_train)
 
-    preds = model.predict(X_test)
+    threshold = 0.3
+    probs = model.predict_proba(X_test)[:, 1]
+    preds = (probs >= threshold).astype(int)
     probs = model.predict_proba(X_test)[:, 1]
 
     st.success("🎉 Модель успешно обучена!")
@@ -164,6 +166,7 @@ if st.button("Обучить модель"):
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
     st.pyplot(fig)
+
 
 
 
