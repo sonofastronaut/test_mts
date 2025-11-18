@@ -7,14 +7,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
-    classification_report, confusion_matrix,
+    confusion_matrix,
     roc_auc_score, precision_score, recall_score,
     f1_score, precision_recall_curve, auc
 )
 
 # Настройки страницы
-st.set_page_config(page_title="Churn Prediction App", page_icon="📊")
-st.title("📉 Предсказание оттока клиентов (Churn)")
+st.set_page_config(page_title="Предсказание оттока абонентов в телекоме", page_icon="📊")
+st.title("📉 Предсказание оттока клиентов")
 
 # ============================================================
 # 1. Загрузка данных
@@ -28,9 +28,9 @@ if uploaded is None:
 
 df = pd.read_csv(uploaded)
 
-# ============================================================
+
 # 2. Предварительный анализ
-# ============================================================
+
 st.header("🔎 Предпросмотр данных")
 st.write(df.head())
 
@@ -50,9 +50,7 @@ if "churn" in df.columns:
 else:
     st.warning("⚠️ В данных нет столбца 'churn'. Обучение модели будет недоступно.")
 
-# ============================================================
 # 3. Предобработка
-# ============================================================
 
 # Удаляем ID, если есть
 if "customerid" in df.columns:
@@ -63,18 +61,18 @@ for col in df.columns:
     if df[col].dtype == "object":
         df[col] = LabelEncoder().fit_transform(df[col])
 
-# ============================================================
+
 # 4. Корреляции
-# ============================================================
+
 st.subheader("🧩 Матрица корреляций")
 
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.heatmap(df.corr(), cmap="Reds")
 st.pyplot(fig)
 
-# ============================================================
+
 # 5. Обучение модели RandomForest
-# ============================================================
+
 st.header("🤖 Обучение модели (RandomForest)")
 
 if st.button("Обучить модель"):
@@ -91,7 +89,7 @@ if st.button("Обучить модель"):
         X, y, test_size=0.25, random_state=42
     )
 
-    # Модель RandomForest с учетом дисбаланса
+    # Модель RandomForest 
     model = RandomForestClassifier(
         n_estimators=300,
         random_state=42,
@@ -103,12 +101,11 @@ if st.button("Обучить модель"):
     threshold = 0.3
     probs = model.predict_proba(X_test)[:, 1]
     preds = (probs >= threshold).astype(int)
-    probs = model.predict_proba(X_test)[:, 1]
 
     st.success("🎉 Модель успешно обучена!")
-    # ============================================================
-    # 6. Метрики (для несбалансированных данных)
-    # ============================================================
+ 
+    # 6. Метрики 
+   
     st.subheader("📈 Метрики модели")
 
     precision = precision_score(y_test, preds)
@@ -118,29 +115,27 @@ if st.button("Обучить модель"):
     # ROC-AUC
     roc_auc = roc_auc_score(y_test, probs)
 
-    # PR-AUC (главная метрика при дисбалансе)
+    # PR-AUC
     precision_curve, recall_curve, thresholds = precision_recall_curve(y_test, probs)
     pr_auc = auc(recall_curve, precision_curve)
 
     st.write(f"**Precision:** {precision:.4f}")
-    st.write(f"**Recall:** {recall:.4f}  ← ключевая метрика для churn")
+    st.write(f"**Recall:** {recall:.4f} ")
     st.write(f"**F1-score:** {f1:.4f}")
     st.write(f"**ROC-AUC:** {roc_auc:.4f}")
     st.write(f"**PR-AUC:** {pr_auc:.4f}")
 
-    # st.text("Классификационный отчёт:")
-    # st.text(classification_report(y_test, preds))
 
-    # ============================================================
-    # 7. Precision–Recall Curve
-    # ============================================================
-    st.subheader("📉 Precision–Recall Curve")
+    
+    # 7. Кривая Precision–Recall
+    
+    st.subheader("📉 Кривая Precision–Recall")
 
     fig, ax = plt.subplots()
     ax.plot(recall_curve, precision_curve)
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
-    ax.set_title("Precision–Recall Curve")
+    ax.set_title("Кривая Precision–Recall")
     st.pyplot(fig)
 
     # ============================================================
@@ -166,6 +161,7 @@ if st.button("Обучить модель"):
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
     st.pyplot(fig)
+
 
 
 
