@@ -143,5 +143,6 @@ if st.button("Обучить модель"):
     fig, ax = plt.subplots(figsize=(8, 6))
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
-    st.pyp
+    st.pyplot(fig)
+
 
