@@ -14,11 +14,9 @@ from sklearn.metrics import (
 
 # Настройки страницы
 st.set_page_config(page_title="Предсказание оттока абонентов в телекоме", page_icon="📊")
-st.title("📉 Предсказание оттока клиентов")
+st.title("📉 Предсказание оттока / бинарной классификации")
 
-# ============================================================
-# 1. Загрузка данных
-# ============================================================
+# Загрузка данных
 st.header("📁 Загрузите CSV-файл")
 uploaded = st.file_uploader("Выберите файл", type=["csv"])
 
@@ -28,63 +26,61 @@ if uploaded is None:
 
 df = pd.read_csv(uploaded)
 
-
-# 2. Предварительный анализ
-
+# Предпросмотр данных
 st.header("🔎 Предпросмотр данных")
 st.write(df.head())
 
+# Пропуски
 st.subheader("📊 Пропуски в данных")
 missing = df.isna().sum().to_frame(name="Количество пропусков")
 st.write(missing)
 
-# Распределение целевой переменной
-if "churn" in df.columns:
-    st.subheader("📌 Распределение целевой переменной — churn")
+# Определение целевой переменной
+st.subheader("🎯 Определение целевой переменной")
 
-    fig, ax = plt.subplots()
-    sns.countplot(x=df["churn"], ax=ax)
-    ax.set_xlabel("Churn")
-    ax.set_ylabel("Количество")
-    st.pyplot(fig)
+# Ищем бинарные признаки
+binary_columns = [col for col in df.columns if df[col].nunique() == 2]
+
+if len(binary_columns) > 0:
+    st.info("В датасете обнаружены бинарные столбцы. Выберите целевой признак.")
+    target = st.selectbox("Целевая переменная:", binary_columns)
 else:
-    st.warning("⚠️ В данных нет столбца 'churn'. Обучение модели будет недоступно.")
+    st.warning("Бинарных признаков не найдено. Выберите целевую переменную вручную.")
+    target = st.selectbox("Целевая переменная:", df.columns)
 
-# 3. Предобработка
+st.write(f"Выбран целевой столбец: **{target}**")
 
-# Удаляем ID, если есть
+# Распределение целевого признака
+st.subheader("📌 Распределение целевой переменной")
+fig, ax = plt.subplots()
+sns.countplot(x=df[target], ax=ax)
+ax.set_xlabel(target)
+ax.set_ylabel("Количество")
+st.pyplot(fig)
+
+# Предобработка
 if "customerid" in df.columns:
     df.drop("customerid", axis=1, inplace=True)
 
-# Кодирование категорий
 for col in df.columns:
     if df[col].dtype == "object":
         df[col] = LabelEncoder().fit_transform(df[col])
 
-
-# 4. Корреляции
-
+# Корреляции
 st.subheader("🧩 Матрица корреляций")
-
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.heatmap(df.corr(), cmap="Reds")
 st.pyplot(fig)
 
-
-# 5. Обучение модели RandomForest
-
+# Обучение модели
 st.header("🤖 Обучение модели (RandomForest)")
 
 if st.button("Обучить модель"):
-    
-    if "churn" not in df.columns:
-        st.error("❌ Ошибка: нет столбца 'churn'. Невозможно обучить модель.")
-        st.stop()
 
-    X = df.drop("churn", axis=1)
-    y = df["churn"]
+    X = df.drop(target, axis=1)
+    y = df[target]
 
-    # train-test split
+    # Разделение на train/test
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42
     )
@@ -98,39 +94,32 @@ if st.button("Обучить модель"):
 
     model.fit(X_train, y_train)
 
+    # Порог классификации
     threshold = 0.3
     probs = model.predict_proba(X_test)[:, 1]
     preds = (probs >= threshold).astype(int)
 
     st.success("🎉 Модель успешно обучена!")
- 
-    # 6. Метрики 
-   
+
+    # Метрики
     st.subheader("📈 Метрики модели")
 
     precision = precision_score(y_test, preds)
     recall = recall_score(y_test, preds)
     f1 = f1_score(y_test, preds)
 
-    # ROC-AUC
     roc_auc = roc_auc_score(y_test, probs)
 
-    # PR-AUC
     precision_curve, recall_curve, thresholds = precision_recall_curve(y_test, probs)
     pr_auc = auc(recall_curve, precision_curve)
 
     st.write(f"**Precision:** {precision:.4f}")
-    st.write(f"**Recall:** {recall:.4f} ")
+    st.write(f"**Recall:** {recall:.4f}")
     st.write(f"**F1-score:** {f1:.4f}")
     st.write(f"**ROC-AUC:** {roc_auc:.4f}")
     st.write(f"**PR-AUC:** {pr_auc:.4f}")
 
-
-    
-    # 7. Кривая Precision–Recall
-    
-    st.subheader("📉 Кривая Precision–Recall")
-
+    # Кривая Precision–Recall
     fig, ax = plt.subplots()
     ax.plot(recall_curve, precision_curve)
     ax.set_xlabel("Recall")
@@ -138,11 +127,8 @@ if st.button("Обучить модель"):
     ax.set_title("Кривая Precision–Recall")
     st.pyplot(fig)
 
-    # ============================================================
-    # 8. Матрица ошибок
-    # ============================================================
+    # Матрица ошибок
     st.subheader("🟥 Матрица ошибок")
-
     cm = confusion_matrix(y_test, preds)
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Reds")
@@ -150,19 +136,11 @@ if st.button("Обучить модель"):
     ax.set_ylabel("Фактически")
     st.pyplot(fig)
 
-    # ============================================================
-    # 9. Важность признаков
-    # ============================================================
+    # Важность признаков
     st.subheader("🌲 Важность признаков")
-
     importances = pd.Series(model.feature_importances_, index=X.columns)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     importances.sort_values().plot(kind="barh", ax=ax)
     ax.set_title("Feature Importance")
-    st.pyplot(fig)
-
-
-
-
-
+    st.pyp
